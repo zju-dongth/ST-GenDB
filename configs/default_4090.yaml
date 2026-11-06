@@ -1,0 +1,78 @@
+# ST-GenDB Default Configuration for Single NVIDIA RTX 4090 (24.0 GB VRAM)
+
+# Prepared dataset, calibration, and VLM checkpoint paths
+dataset:
+  topology_file: "./data/cityflow_nl/topology.json"
+  slices_file: "./data/cityflow_nl/slices.jsonl"
+  queries_file: "./data/cityflow_nl/queries.json"
+  calibration_file: "./data/cityflow_nl/val_calibration.npz"
+  vlm_model_path: "./pretrained/Qwen2.5-VL-7B-Instruct"
+  total_indexed_snapshots: 0
+
+# Hardware memory model and quantized VLM footprint (Section III-B, Eq. 4)
+hardware:
+  gpu_name: "NVIDIA GeForce RTX 4090"
+  hard_vram_limit_gb: 24.0
+  clause_c1_vram_budget_gb: 22.5
+  base_vlm_weights_gb: 8.31
+  tier0_descriptor_bytes: 2048
+  kv_bytes_per_token: 131072
+
+# Session execution mode ("warm" retains B1/B2 slots across queries; "cold" resets per query)
+execution:
+  mode: "warm"
+
+# Intent-to-Plan Optimizer (IPO) selectivity and quota seeding (Section III-A)
+synthesizer:
+  root_selectivity_threshold: 0.30
+  pushdown_selectivity_threshold: 0.45
+  tier2_verify_share: 0.35
+  hub_regularization_weight: 0.35
+  default_selectivity: 0.28
+
+# Clause-Level Admission Gate parameters (Section III-B to III-D, Algorithm 1)
+admission_gate:
+  enable_clause_c1_vram: true
+  enable_clause_c2_window: true
+  enable_clause_c3_provenance: true
+  default_k_comp: 4
+  min_coupled_recall: 0.78
+  stagnation_epsilon: 0.015
+  min_compression_alpha: 0.25
+
+# Road-network kinematic causal reachability bounds and telemetry defaults (Section II-A, Eq. 1)
+topology_defaults:
+  v_min_mps: 5.5
+  v_max_mps: 21.0
+  tau_sig_sec: 18.0
+  congestion_speed_floor_mps: 0.8
+  congestion_clearance_scale: 2.2
+
+# Three-tier visual token buffer pool and Provenance-Heat replacement (Section IV, Eqs. 9-10)
+buffer_pool:
+  tier_resolutions: [1, 32, 256]
+  enable_progressive_escalation: true
+  max_tier1_capacity: 1536
+  max_tier2_capacity: 384
+  ambiguity_margin_gamma: 0.14
+  enable_multi_query_cache: true
+  eviction_policy: "provenance_heat"
+  utility_weights: [0.55, 0.25, 0.20]
+  recency_decay_kappa: 0.08
+  heat_saturation_cap: 5.0
+
+# Spatio-temporal semantic operator thresholds and scoring weights (Section II-B to II-C)
+algebra:
+  filter_threshold: 0.52
+  uncertain_margin: 0.14
+  link_appearance_weight: 0.94
+  link_spatiotemporal_weight: 0.06
+  link_min_edge_confidence: 0.44
+  comove_min_pair_confidence: 0.45
+
+# Held-out validation subspace and log-odds calibration defaults (Section V-A)
+calibration:
+  subspace_dim: 64
+  wccn_reg_lambda: 0.18
+  wccn_whiten_alpha: 0.65
+  subspace_mix_alpha: 0.85
